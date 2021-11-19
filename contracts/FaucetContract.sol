@@ -3,6 +3,8 @@ pragma solidity >=0.4.22 <0.9.0;
 
 contract Faucet {
 
+    address[] public funders;
+
     // this is a special function
     // it's called when you make a transaction and doesn't specify function name to call
 
@@ -11,6 +13,17 @@ contract Faucet {
 
     // payable means that it can receive ether into this contract
 
-    receive() external payable {   
+    receive() external payable {}
+
+    function addFunds() external payable {
+        funders.push(msg.sender);
+    }
+
+    function getAllFunders() external view returns (address[] memory) {
+        return funders;
+    }
+
+    function getFunderAtIndex(uint256 index) external view returns (address) {
+        return funders[index];
     }
 }
