@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
-contract Faucet {
+import "./Owned.sol";
+import "./Logger.sol";
+import "./IFaucet.sol";
 
-    address[] public funders;
+contract Faucet is Owned, Logger, IFaucet {
+
+    uint public totalFunders;
+    
+    mapping(address => bool) public funders;
+    mapping(uint => address) public lutFunders;
+
+    modifier limitWithdraw(uint amount) {
+        require(amount <= 100000000000000000, "Amount too large");
+        _;
+    }
 
     // this is a special function
     // it's called when you make a transaction and doesn't specify function name to call
@@ -16,14 +28,36 @@ contract Faucet {
     receive() external payable {}
 
     function addFunds() external payable {
-        funders.push(msg.sender);
+        if (!funders[msg.sender]) {
+            lutFunders[totalFunders++] = msg.sender;
+            funders[msg.sender] = true;
+        }
+    }
+
+    function emitLog() public override pure returns (bytes32) {
+        return "Hello World";
+    }
+
+    function withdraw(uint amount) external limitWithdraw(amount) {
+        payable(msg.sender).transfer(amount);
+    }
+
+    function getFunderAtIndex(uint256 index) external view onlyOwner() returns (address) {
+        return lutFunders[index];
     }
 
     function getAllFunders() external view returns (address[] memory) {
-        return funders;
-    }
-
-    function getFunderAtIndex(uint256 index) external view returns (address) {
-        return funders[index];
+        address[] memory _funders = new address[](totalFunders);
+        for (uint i = 0; i < totalFunders; i++) {
+            _funders[i] = lutFunders[i];
+        }
+        return _funders;
     }
 }
+
+// const instance = await Faucet.deployed();
+// instance.addFunds({value: "1000000000000000000", from: accounts[0]});
+// instance.addFunds({value: "1000000000000000000", from: accounts[1]});
+// instance.getFunderAtIndex(0);
+// instance.getAllFunders();
+// instance.withdraw(500000000000000000, {from: accounts[1]});
