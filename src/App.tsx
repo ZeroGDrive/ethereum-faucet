@@ -30,7 +30,6 @@ function App() {
       const contract = await loadContract('Faucet', provider);
       // with Metamask we have access to window.ethereum & window.web3
       // Metamask injects global api into websites
-      debugger;
       if (provider) {
         accountListener(provider);
         setWeb3Api({
@@ -116,10 +115,18 @@ function App() {
             Current Balance: <strong>{balance}</strong> ETH
           </div>
 
-          <button className="button is-link mr-2" onClick={addFunds}>
+          <button
+            disabled={!account}
+            className="button is-link mr-2"
+            onClick={addFunds}
+          >
             Donate 1eth
           </button>
-          <button className="button is-primary " onClick={withdraw}>
+          <button
+            disabled={!account}
+            className="button is-primary "
+            onClick={withdraw}
+          >
             Withdraw 0.1eth
           </button>
         </div>
