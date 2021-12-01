@@ -17,29 +17,31 @@ function App() {
 
   const [balance, setBalance] = useState<string | null>(null);
   const [account, setAccount] = useState<string | null>(null);
+  const [isProviderLoaded, setIsProviderLoaded] = useState(false);
 
+  const canConnectToNetwork = account && web3Api.contract;
   const accountListener = (provider: any) => {
     provider.on('accountsChanged', (accounts: string[]) =>
       setAccount(accounts[0])
     );
+    provider.on('chainChanged', (chainId: string) => window.location.reload());
   };
 
   useEffect(() => {
     const loadProvider = async () => {
       const provider: any = await detectEthereumProvider();
-      const contract = await loadContract('Faucet', provider);
       // with Metamask we have access to window.ethereum & window.web3
       // Metamask injects global api into websites
       if (provider) {
+        const contract = await loadContract('Faucet', provider);
         accountListener(provider);
         setWeb3Api({
           web3: new Web3(provider),
           provider,
           contract,
         });
-      } else {
-        alert('Please install Metamask');
       }
+      setIsProviderLoaded(true);
     };
 
     loadProvider();
@@ -106,24 +108,47 @@ function App() {
         <div className="faucet">
           <div className="is-flex is-align-items-center">
             <span className="mr-2">
-              <strong>Account:</strong>
+              {!isProviderLoaded && 'Looking for a Wallet...'}
+              {web3Api.provider ? (
+                <strong>Account:</strong>
+              ) : (
+                isProviderLoaded && (
+                  <div className="notification is-warning is-size-6 is-rounded">
+                    Wallet is not detected!{'  '}
+                    <a
+                      target="_blank"
+                      rel="noreferrer"
+                      href="https://docs.metamask.io"
+                    >
+                      Install Metamask
+                    </a>
+                  </div>
+                )
+              )}
             </span>
 
-            {account ? <span>{account}</span> : <ConnectButton />}
+            {account ? (
+              <span>{account}</span>
+            ) : (
+              web3Api.provider && <ConnectButton />
+            )}
           </div>
           <div className="balance-view is-size-2 mb-4">
             Current Balance: <strong>{balance}</strong> ETH
           </div>
+          {!canConnectToNetwork && (
+            <i className="is-block">Connect to Ganache</i>
+          )}
 
           <button
-            disabled={!account}
+            disabled={!canConnectToNetwork}
             className="button is-link mr-2"
             onClick={addFunds}
           >
             Donate 1eth
           </button>
           <button
-            disabled={!account}
+            disabled={!canConnectToNetwork}
             className="button is-primary "
             onClick={withdraw}
           >
